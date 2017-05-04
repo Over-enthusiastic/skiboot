@@ -21,7 +21,7 @@ CORE_TEST := \
 	core/test/run-timer \
 	core/test/run-buddy
 
-HOSTCFLAGS+=-I . -I include
+HOSTCFLAGS+=-I .
 
 CORE_TEST_NOSTUB := core/test/run-console-log
 CORE_TEST_NOSTUB += core/test/run-console-log-buf-overrun

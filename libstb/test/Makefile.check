@@ -2,7 +2,7 @@
 LIBSTB_TEST := libstb/test/run-stb-container \
 	    libstb/test/print-stb-container
 
-HOSTCFLAGS+=-I . -I include
+HOSTCFLAGS+=-I .
 
 libstb/test/print-stb-container-check: libstb/test/print-stb-container-q
 
