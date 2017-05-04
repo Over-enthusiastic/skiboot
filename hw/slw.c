@@ -701,6 +701,22 @@ static struct cpu_idle_states power9_dd1_cpu_idle_states[] = {
 				 | OPAL_PM_PSSCR_TR(3) \
 				 | OPAL_PM_PSSCR_ESL \
 				 | OPAL_PM_PSSCR_EC,
+		.pm_ctrl_reg_mask = OPAL_PM_PSSCR_MASK },
+	{
+		.name = "stop4",
+		.latency_ns = 2060000,
+		.residency_ns = 1000000,
+		.flags = 1*OPAL_PM_DEC_STOP \
+		       | 1*OPAL_PM_TIMEBASE_STOP  \
+		       | 1*OPAL_PM_LOSE_USER_CONTEXT \
+		       | 1*OPAL_PM_LOSE_HYP_CONTEXT \
+		       | 1*OPAL_PM_LOSE_FULL_CONTEXT \
+		       | 1*OPAL_PM_STOP_INST_DEEP,
+		.pm_ctrl_reg_val = OPAL_PM_PSSCR_RL(4) \
+				 | OPAL_PM_PSSCR_MTL(7) \
+				 | OPAL_PM_PSSCR_TR(3) \
+				 | OPAL_PM_PSSCR_ESL \
+				 | OPAL_PM_PSSCR_EC,
 		.pm_ctrl_reg_mask = OPAL_PM_PSSCR_MASK }
 };
 
@@ -713,7 +729,7 @@ void add_cpu_idle_state_properties(void)
 	int nr_states;
 
 	bool can_sleep = true;
-	bool has_slw = true;
+	bool has_wakeup_engine = true;	/* p8=SLW; p9=CME */
 	bool has_stop_inst = false;
 	u8 i;
 
@@ -803,8 +819,11 @@ void add_cpu_idle_state_properties(void)
 	}
 
 	/* Enable deep idle states only if slw image is intact */
-	has_slw = (chip->slw_base && chip->slw_bar_size &&
-			chip->slw_image_size);
+	if (proc_gen == proc_gen_p8)
+		has_wakeup_engine = (chip->slw_base && chip->slw_bar_size &&
+				chip->slw_image_size);
+	else /*if (proc_gen == proc_gen_p9)*/
+		has_wakeup_engine = !(QUIRK_MAMBO_CALLOUTS);
 
 	/*
 	 * Currently we can't append strings and cells to dt properties.
@@ -832,7 +851,7 @@ void add_cpu_idle_state_properties(void)
 	if (has_stop_inst) {
 		/* Power 9 / POWER ISA 3.0 */
 		supported_states_mask = OPAL_PM_STOP_INST_FAST;
-		if (has_slw)
+		if (has_wakeup_engine)
 			supported_states_mask |= OPAL_PM_STOP_INST_DEEP;
 	} else {
 		/* Power 7 and Power 8 */
@@ -840,7 +859,7 @@ void add_cpu_idle_state_properties(void)
 		if (can_sleep)
 			supported_states_mask |= OPAL_PM_SLEEP_ENABLED |
 						OPAL_PM_SLEEP_ENABLED_ER1;
-		if (has_slw)
+		if (has_wakeup_engine)
 			supported_states_mask |= OPAL_PM_WINKLE_ENABLED;
 	}
 	for (i = 0; i < nr_states; i++) {
