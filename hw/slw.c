@@ -30,6 +30,7 @@
 #include <libfdt/libfdt.h>
 #include <opal-api.h>
 
+#include <p9_stop_api.H>
 #include <p8_pore_table_gen_api.H>
 #include <sbe_xip_image.h>
 
@@ -1300,33 +1301,49 @@ int64_t opal_slw_set_reg(uint64_t cpu_pir, uint64_t sprn, uint64_t val)
 	assert(c);
 	chip = get_chip(c->chip_id);
 	assert(chip);
-	image = (void *) chip->slw_base;
 
-	/* Check of the SPR is supported by libpore */
-	for ( i=0; i < SLW_SPR_REGS_SIZE ; i++)  {
-		if (sprn == SLW_SPR_REGS[i].value)  {
-			spr_is_supported = 1;
-			break;
+
+	if (chip->type == PROC_CHIP_P9_NIMBUS ||
+			chip->type == PROC_CHIP_P9_CUMULUS ) {
+		if(!chip->homer_base) {
+			log_simple_error(&e_info(OPAL_RC_SLW_REG),
+					"SLW: HOMER base not set %x\n",
+					chip->id);
+			return OPAL_INTERNAL_ERROR;
 		}
-	}
-	if (!spr_is_supported) {
-		log_simple_error(&e_info(OPAL_RC_SLW_REG),
-			"SLW: Trying to set unsupported spr for CPU %x\n",
-			c->pir);
-		return OPAL_UNSUPPORTED;
-	}
+		rc = p9_stop_save_cpureg((void *) chip->homer_base,
+					  sprn, val, cpu_pir);
 
-	rc = p8_pore_gen_cpureg_fixed(image, P8_SLW_MODEBUILD_SRAM, sprn,
-						val, cpu_get_core_index(c),
+	} else { /* Assuming its P8 */
+
+		/* Check of the SPR is supported by libpore */
+		for ( i=0; i < SLW_SPR_REGS_SIZE ; i++)  {
+			if (sprn == SLW_SPR_REGS[i].value)  {
+				spr_is_supported = 1;
+				break;
+			}
+		}
+		if (!spr_is_supported) {
+			log_simple_error(&e_info(OPAL_RC_SLW_REG),
+			"SLW: Trying to set unsupported spr for CPU %x\n",
+				c->pir);
+			return OPAL_UNSUPPORTED;
+		}
+		image = (void *) chip->slw_base;
+		rc = p8_pore_gen_cpureg_fixed(image, P8_SLW_MODEBUILD_SRAM,
+						sprn, val,
+						cpu_get_core_index(c),
 						cpu_get_thread_index(c));
+	}
 
 	if (rc) {
 		log_simple_error(&e_info(OPAL_RC_SLW_REG),
-			"SLW: Failed to set spr for CPU %x\n",
-			c->pir);
+			"SLW: Failed to set spr %llx for CPU %x\n",
+			sprn, c->pir);
 		return OPAL_INTERNAL_ERROR;
 	}
-
+	prlog(PR_NOTICE, "SLW: restore spr:0x%llx on c:0x%x with 0x%llx\n",
+							sprn, c->pir, val);
 	return OPAL_SUCCESS;
 
 }
