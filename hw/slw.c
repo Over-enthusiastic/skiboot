@@ -681,17 +681,17 @@ static struct cpu_idle_states power9_dd1_cpu_idle_states[] = {
 				 | OPAL_PM_PSSCR_TR(3),
 		.pm_ctrl_reg_mask = OPAL_PM_PSSCR_MASK },
 	{
-		.name = "stop1",
+		.name = "stop4",
 		.latency_ns = 2050000,
 		.residency_ns = 50000,
-		.flags = 0*OPAL_PM_DEC_STOP \
-		       | 0*OPAL_PM_TIMEBASE_STOP  \
+		.flags = 1*OPAL_PM_DEC_STOP \
+		       | 1*OPAL_PM_TIMEBASE_STOP  \
 		       | 1*OPAL_PM_LOSE_USER_CONTEXT \
-		       | 0*OPAL_PM_LOSE_HYP_CONTEXT \
-		       | 0*OPAL_PM_LOSE_FULL_CONTEXT \
-		       | 1*OPAL_PM_STOP_INST_FAST,
-		.pm_ctrl_reg_val = OPAL_PM_PSSCR_RL(1) \
-				 | OPAL_PM_PSSCR_MTL(3) \
+		       | 1*OPAL_PM_LOSE_HYP_CONTEXT \
+		       | 1*OPAL_PM_LOSE_FULL_CONTEXT \
+		       | 1*OPAL_PM_STOP_INST_DEEP,
+		.pm_ctrl_reg_val = OPAL_PM_PSSCR_RL(4) \
+				 | OPAL_PM_PSSCR_MTL(7) \
 				 | OPAL_PM_PSSCR_TR(3) \
 				 | OPAL_PM_PSSCR_ESL \
 				 | OPAL_PM_PSSCR_EC,
