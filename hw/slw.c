@@ -854,15 +854,6 @@ void add_cpu_idle_state_properties(void)
 		if (!(states[i].flags & supported_states_mask))
 			continue;
 
-		/* We can only use the stop levels that HB has made available */
-		if (has_stop_inst) {
-			u32 level = 31 - (states[i].pm_ctrl_reg_val &
-					 OPAL_PM_PSSCR_RL_MASK);
-
-			if (!(stop_levels & (1ul << level)))
-				continue;
-		}
-
 		prlog(PR_NOTICE, "SLW: Enabling: %s\n", states[i].name);
 
 		/*
